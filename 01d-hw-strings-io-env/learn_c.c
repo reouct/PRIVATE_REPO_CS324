@@ -5,7 +5,7 @@
 
 #include <fcntl.h>
 
-#define BUFSIZE 30
+#define BUFSIZE 4
 
 void memprint(char *, char *, int);
 
@@ -98,6 +98,9 @@ void part2() {
 	memcpy(s2, s1, sizeof(s1));
 
 	printf("===== Question 10 =====\n");
+	printf("s1: %lu\n", (long unsigned int)&s1);
+	printf("s2: %lu\n", (long unsigned int)&s2);
+	printf("s3: %lu\n", (long unsigned int)&s3);
 
 	printf("===== Question 11 =====\n");
 
@@ -138,10 +141,17 @@ void part4() {
 	char s4[16];
 
 	printf("===== Question 23 =====\n");
+	strcpy(s3, s1);
+	memprint(s3, "%02x", sizeof(s3));
 
 	printf("===== Question 24 =====\n");
 	int myval = 42;
 
+    // Format the string and store it in s4
+    sprintf(s4, "%s %d\n", s1, myval);
+
+    // Print the contents of s4 in hexadecimal format
+    memprint(s4, "%02x", sizeof(s4));
 	printf("===== Question 25 =====\n");
 	char *s5;
 	char *s6 = NULL;
@@ -166,37 +176,60 @@ void part5(char *filename) {
 	char buf[BUFSIZE];
 
 	printf("===== Question 28 =====\n");
-	memset(buf, 'z', BUFSIZE);
-	buf[24] = '\0';
+	//memset(buf, 'z', BUFSIZE);
+	//buf[24] = '\0';
 	printf("buf: %s\n", buf);
 	write(STDOUT_FILENO, buf, BUFSIZE);
 	printf("\n");
 
 	fprintf(stderr, "===== Question 29 =====\n");
-	memset(buf, 'z', sizeof(buf));
-	buf[24] = '\0';
+	//memset(buf, 'z', sizeof(buf));
+	//buf[24] = '\0';
 	fprintf(stderr, "buf: %s\n", buf);
 	write(STDERR_FILENO, buf, sizeof(buf));
-	fprintf(stderr, "\n");
+	printf("\n");
 
 	printf("===== Question 30 (no code changes) =====\n");
 
 	printf("===== Question 31 =====\n");
 	int fd1, fd2;
+	fd1 = open(filename, O_RDONLY);
+	fd2 = fd1;
+	printf("fd1: %d\n", fd1);
+	printf("fd2: %d\n", fd2);
 
 	printf("===== Question 32 =====\n");
 	size_t nread = 0;
 	size_t totread = 0;
+	nread = read(fd1, buf, BUFSIZE);
+	totread += nread;
+	printf("nread: %zu\n", nread);
+	printf("totread: %zu\n", totread);
+	memprint(buf, "%02x", nread);
 
 	printf("===== Question 33 (no code changes) =====\n");
 
 	printf("===== Question 34 =====\n");
+	printf("first nread: %zd\n", nread);
+	printf("second totread: %zd\n", totread);
+	nread = read(fd2, buf + totread, BUFSIZE);
+	totread += nread;
+	printf("second read nread: %zd\n", nread);
+	printf("second read totread: %zd\n", totread);
+	memprint(buf, "%02x", totread);
 
 	printf("===== Question 35 (no code changes) =====\n");
 
 	printf("===== Question 36 (no code changes) =====\n");
 
 	printf("===== Question 37 =====\n");
+	printf("first nread: %zd\n", nread);
+	printf("second totread: %zd\n", totread);
+	nread = read(fd2, buf + totread, BUFSIZE - totread);
+	totread += nread;
+	printf("second read nread: %zd\n", nread);
+	printf("second read totread: %zd\n", totread);
+	memprint(buf, "%02x", totread);
 
 	printf("===== Question 38 (no code changes) =====\n");
 
@@ -205,27 +238,63 @@ void part5(char *filename) {
 	printf("===== Question 40 (no code changes) =====\n");
 
 	printf("===== Question 41 =====\n");
+	printf("first nread: %zd\n", nread);
+	printf("second totread: %zd\n", totread);
+	nread = read(fd2, buf + totread, BUFSIZE - totread);
+	totread += nread;
+	printf("second read nread: %zd\n", nread);
+	printf("second read totread: %zd\n", totread);
+	memprint(buf, "%02x", totread);
 
 	printf("===== Question 42 =====\n");
+	printf("%s\n", buf);
 
 	printf("===== Question 43 =====\n");
+	buf[totread] = '\0';
+	printf("%s\n", buf);
 
 	printf("===== Question 44 =====\n");
+	close(fd1);
+	printf("fd1: %d\n", fd1);
 
 	printf("===== Question 45 =====\n");
 	int ret = 0;
+	close(fd2);
+	printf("fd2: %d\n", fd2);
 
 	printf("===== Question 46 =====\n");
+	fprintf(stdout, "abc");
+	fprintf(stderr, "def");
+	fprintf(stdout, "ghi\n");
+
+	write(STDOUT_FILENO, "abc",3);
+	write(STDERR_FILENO, "def",3);
+	write(STDOUT_FILENO, "ghi\n",4);
 
 	printf("===== Question 47 =====\n");
+	fprintf(stdout, "abc");
+	fflush(stdout);
+	fprintf(stderr, "def");
+	fprintf(stdout, "ghi\n");
+
+	write(STDOUT_FILENO, "abc",3);
+	write(STDERR_FILENO, "def",3);
+	write(STDOUT_FILENO, "ghi\n",4);
 
 	printf("===== Question 48 =====\n");
+	char *s1 = getenv("CS324_VAR");
+	if (s1 == NULL) {
+		printf("CS324_VAR not found\n");
+	} else {
+		printf("CS324_VAR: %s\n", s1);
+	}
+
 
 }
 
 void part6() {
 	printf("===== Question 49 =====\n");
-	char *s1;
+	char *s1 = getenv("CS324_VAR");
 
 	printf("===== Question 50 (no code changes) =====\n");
 }
