@@ -5,7 +5,7 @@
 
 #include <fcntl.h>
 
-#define BUFSIZE 4
+#define BUFSIZE 30
 
 void memprint(char *, char *, int);
 
@@ -212,7 +212,7 @@ void part5(char *filename) {
 	printf("===== Question 34 =====\n");
 	printf("first nread: %zd\n", nread);
 	printf("second totread: %zd\n", totread);
-	nread = read(fd2, buf + totread, BUFSIZE);
+	nread = read(fd2, buf + totread, totread);
 	totread += nread;
 	printf("second read nread: %zd\n", nread);
 	printf("second read totread: %zd\n", totread);
