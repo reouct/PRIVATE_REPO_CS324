@@ -1,11 +1,42 @@
-Level0: Password is bandit0
-Level1: Password is 6/Q2LbNWe5a4KTk8ymUVrKuQ2J8B+/2+. The pipeline is BANDIT_LEVEL=1 ./level1
-Level2: Password is 4utUC/pa/7fK5zU0Q3qPKPbmicmozKSc. The pipeline is ./level2 2> .dev/null
-Level3: Password is WvmlqTFW+sn+TgJD9nEifb2cFNaDYaL3. The pipeline is grep "^eget" level3.txt | awk '{print $2}'
-Level4: Password is eAyRe5KDtiqxDoeqVCABnj6hBMhCR/Bd. The pipeline is sort level4.txt | tail -n 1 | base64 -d
-Level5: Password is d9addec2125e48f5a24be719eb35f275. The pipeline is dig +short TXT bandit.cs324.internet-measurement.cs.byu.edu | md5sum | cut -c1-32
-level6: Password is Jp1NL6O/H7uPUesDQ7r1TPLH2oGlTyHn. The pipeline is gzip -dc level6.tar.gz | tar -xO | tr 'F' 'L'
-Level7: Password is fb7cf39e8e0becdcd0468863cdc653e6. The pipeline is curl -s https://imaal.byu.edu/cs324/bandit.txt | sha1sum | cut -c1-32
-Level8: Password is Uoux218Rtfi8Eg1UmIfZ9m4NErlTW+d9. The pipeline is ./level8 .
-Level9: Password is WWvs5PXxiY81gLjw60+mBccj6bGACwdU. The pipeline is cat level9.txt | sort | uniq -c | sort -n -r | head -n 1
-Level10: Password is TIyOTczZjk2MDBiMmI3NjA4Y2I3Yjk5M. The pipeline is ./level10 2>&1 | cut -c6-37
+Level 0:
+bandit0
+
+Level 1:
+x6/Q2LbNWe5a4KTk8ymUVrKuQ2J8B+/2+
+BANDIT_LEVEL=1 ./level1
+
+Level2: 
+4utUC/pa/7fK5zU0Q3qPKPbmicmozKSc
+./level2 2> .dev/null
+
+Level3: 
+WvmlqTFW+sn+TgJD9nEifb2cFNaDYaL3
+grep "^eget" level3.txt | awk '{print $2}'
+
+Level4: 
+eAyRe5KDtiqxDoeqVCABnj6hBMhCR/Bd
+sort level4.txt | tail -n 1 | base64 -d
+
+Level5:
+d9addec2125e48f5a24be719eb35f275
+dig +short TXT bandit.cs324.internet-measurement.cs.byu.edu | md5sum | cut -c1-32
+
+Level6:
+Jp1NL6O/H7uPUesDQ7r1TPLH2oGlTyHn
+gzip -dc level6.tar.gz | tar -xO | tr 'F' 'L'
+
+Level7:
+fb7cf39e8e0becdcd0468863cdc653e6
+curl -s https://imaal.byu.edu/cs324/bandit.txt | sha1sum | cut -c1-32
+
+Level8:
+Uoux218Rtfi8Eg1UmIfZ9m4NErlTW+d9
+./level8
+
+Level9:
+WWvs5PXxiY81gLjw60+mBccj6bGACwdU
+cat level9.txt | sort | uniq -c | sort -n -r | head -n 1
+
+Level10:
+TIyOTczZjk2MDBiMmI3NjA4Y2I3Yjk5M
+./level10 2>&1 | cut -c6-37
