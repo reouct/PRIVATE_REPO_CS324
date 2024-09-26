@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <fcntl.h>      // For file operations: O_RDONLY, O_WRONLY, O_CREAT, O_TRUNC
+#include <string.h>     // For strcmp()
 
 /* Misc manifest constants */
 #define MAXLINE    1024   /* max line size */
@@ -99,40 +101,77 @@ int main(int argc, char **argv)
  * immediately. Otherwise, build a pipeline of commands and wait for all of
  * them to complete before returning.
 */
-void eval(char *cmdline) 
-{
+void eval(char *cmdline) {
     char *argv[MAXARGS];  // Argument list for execve()
-    int bg;               // Should the job run in bg or fg?
-    pid_t pid;            // Process id
+    int bg;               // Background job indicator
+    pid_t pid;            // Process ID
 
-    // Parse the command line and get the argv array
+    // Parse the command line
     bg = parseline(cmdline, argv);
     if (argv[0] == NULL) {
-        return;   // Ignore empty lines
+        return;  // Ignore empty lines
     }
 
-    // If it is a built-in command, execute it
-    if (!builtin_cmd(argv)) {
-        // Fork a child process
-        if ((pid = fork()) == 0) {   // Child process
-            if (execvp(argv[0], argv) < 0) {   // Execute the command
-                printf("%s: Command not found\n", argv[0]);
-                exit(1);
+    // Check if it's a built-in command
+    if (builtin_cmd(argv)) {
+        return;
+    }
+
+    // Fork a child process
+    if ((pid = fork()) == 0) {  // Child process
+        int fd_in, fd_out;
+
+        // Input redirection
+        for (int i = 0; argv[i] != NULL; i++) {
+            if (strcmp(argv[i], "<") == 0) {
+                fd_in = open(argv[i + 1], O_RDONLY);
+                if (fd_in < 0) {
+                    perror(argv[i + 1]);
+                    exit(1);
+                }
+                dup2(fd_in, STDIN_FILENO); // Redirect stdin to the file
+                close(fd_in); // Close the unused file descriptor
+                argv[i] = NULL; // Remove redirection from argv
             }
         }
 
-        // Parent process
-        if (!bg) {  // Wait for foreground job to complete
-            int status;
-            if (waitpid(pid, &status, 0) < 0) {
-                unix_error("waitfg: waitpid error");
+        // Output redirection
+        for (int i = 0; argv[i] != NULL; i++) {
+            if (strcmp(argv[i], ">") == 0) {
+                fd_out = open(argv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0600);
+                if (fd_out < 0) {
+                    perror(argv[i + 1]);
+                    exit(1);
+                }
+                dup2(fd_out, STDOUT_FILENO); // Redirect stdout to the file
+                close(fd_out); // Close the unused file descriptor
+                argv[i] = NULL; // Remove redirection from argv
             }
-        } else {   // Background job
-            printf("%d %s", pid, cmdline);
         }
+
+        // Execute the command
+        if (execvp(argv[0], argv) < 0) {
+            printf("%s: Command not found\n", argv[0]);
+            exit(1);
+        }
+    }
+
+    // Parent process
+    if (!bg) {
+        int status;
+        // Put the child in its own process group
+        setpgid(pid, pid);
+        // Wait for the child to finish
+        if (waitpid(pid, &status, 0) < 0) {
+            perror("waitpid");
+        }
+    } else {
+        // Background job handling
+        printf("%d %s", pid, cmdline);
     }
     return;
 }
+
 
 /* 
  * parseargs - Parse the arguments to identify pipelined commands
@@ -265,7 +304,6 @@ int builtin_cmd(char **argv)
     if (strcmp(argv[0], "quit") == 0) { // Check if the command is "quit"
         exit(0); // Exit the shell
     }
-
     return 0; // Not a built-in command
 }
 
