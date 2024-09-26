@@ -1,49 +1,59 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
-	int pid;
+    pid_t pid;
+    int fd;
 
-	printf("Starting program; process has pid %d\n", getpid());
+    // Open fork-output.txt for writing
+    fd = open("fork-output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        perror("open failed");
+        exit(EXIT_FAILURE);
+    }
 
-	if ((pid = fork()) < 0) {
-		fprintf(stderr, "Could not fork()");
-		exit(1);
-	}
+    pid = fork();
 
-	/* BEGIN SECTION A */
+    if (pid < 0) {
+        perror("fork failed");
+        exit(EXIT_FAILURE);
+    }
 
-	printf("Section A;  pid %d\n", getpid());
-	sleep(5);
+    if (pid == 0) {
+        // Child process
 
-	/* END SECTION A */
-	if (pid == 0) {
-		/* BEGIN SECTION B */
+        // Duplicate the file descriptor to standard output
+        if (dup2(fd, STDOUT_FILENO) < 0) {
+            perror("dup2 failed");
+            exit(EXIT_FAILURE);
+        }
 
-		printf("Section B\n");
-		sleep(30);
-		printf("Section B done sleeping\n");
+        close(fd);  // Close the original file descriptor after duplicating
 
-		exit(0);
+        if (argc <= 1) {
+            printf("No program to exec. Exiting...\n");
+            exit(0);
+        }
 
-		/* END SECTION B */
-	} else {
-		/* BEGIN SECTION C */
+        printf("Running exec of \"%s\"\n", argv[1]);
 
-		printf("Section C\n");
-		sleep(60);
-		printf("Section C done sleeping\n");
+        // Ensure all output is flushed before calling execve
+        fflush(stdout);
 
-		exit(0);
+        execve(argv[1], &argv[1], NULL);
 
-		/* END SECTION C */
-	}
-	/* BEGIN SECTION D */
+        // If execve fails
+        perror("execve failed");
+        exit(EXIT_FAILURE);
+    } else {
+        // Parent process
+        // Optionally, wait for the child process to complete
+        wait(NULL);
+    }
 
-	printf("Section D\n");
-	sleep(30);
-
-	/* END SECTION D */
+    return 0;
 }
-
