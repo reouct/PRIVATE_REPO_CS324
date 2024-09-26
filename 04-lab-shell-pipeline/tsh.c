@@ -119,9 +119,9 @@ void eval(char *cmdline) {
 
     // Fork a child process
     if ((pid = fork()) == 0) {  // Child process
-        int fd_in, fd_out;
+        int fd_in = -1, fd_out = -1;
 
-        // Input redirection
+        // Input and Output Redirection
         for (int i = 0; argv[i] != NULL; i++) {
             if (strcmp(argv[i], "<") == 0) {
                 fd_in = open(argv[i + 1], O_RDONLY);
@@ -129,22 +129,17 @@ void eval(char *cmdline) {
                     perror(argv[i + 1]);
                     exit(1);
                 }
-                dup2(fd_in, STDIN_FILENO); // Redirect stdin to the file
-                close(fd_in); // Close the unused file descriptor
+                dup2(fd_in, STDIN_FILENO);
+                close(fd_in);
                 argv[i] = NULL; // Remove redirection from argv
-            }
-        }
-
-        // Output redirection
-        for (int i = 0; argv[i] != NULL; i++) {
-            if (strcmp(argv[i], ">") == 0) {
+            } else if (strcmp(argv[i], ">") == 0) {
                 fd_out = open(argv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0600);
                 if (fd_out < 0) {
                     perror(argv[i + 1]);
                     exit(1);
                 }
-                dup2(fd_out, STDOUT_FILENO); // Redirect stdout to the file
-                close(fd_out); // Close the unused file descriptor
+                dup2(fd_out, STDOUT_FILENO);
+                close(fd_out);
                 argv[i] = NULL; // Remove redirection from argv
             }
         }
@@ -159,15 +154,12 @@ void eval(char *cmdline) {
     // Parent process
     if (!bg) {
         int status;
-        // Put the child in its own process group
         setpgid(pid, pid);
-        // Wait for the child to finish
         if (waitpid(pid, &status, 0) < 0) {
             perror("waitpid");
         }
     } else {
-        // Background job handling
-        printf("%d %s", pid, cmdline);
+        printf("%d %s\n", pid, cmdline);
     }
     return;
 }
