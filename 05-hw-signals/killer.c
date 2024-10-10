@@ -76,12 +76,49 @@ int main(int argc, char *argv[]) {
 		sleep(1);
 		break;
 	case '6':
+		kill(pid, SIGHUP); // Prints "1 2"
+   		sleep(1);
+    	kill(pid, SIGUSR1); // Prints "7"
+    	sleep(1);
+
+		kill(pid, SIGQUIT);
+		sleep(1);
+
+		kill(pid,12); // get rid of 25 
+		sleep(1);
+		kill(pid, SIGTERM);
+		sleep(1);
+    	break;
 	case '7':
-		break;
+		kill(pid, SIGHUP); // Prints "1 2"
+   		sleep(1);
+    	kill(pid, SIGUSR1); // Prints "7"
+    	sleep(1);
+		kill(pid,12); // get rid of 25 
+		sleep(1);
+		kill(pid, SIGTERM);
+		sleep(1);
+    	break;
 	case '8':
-		break;
+		kill(pid, SIGHUP); // Prints "1 2"
+   		sleep(1);
+    	
+    	sleep(1);
+		kill(pid,12); // get rid of 25 
+		sleep(1);
+		kill(pid, SIGTERM);
+		sleep(1);
+    	break;
 	case '9': 
-		break;
+
+		kill(pid, SIGQUIT); // Print "8 1 2 "
+		sleep(1);
+
+		kill(pid,12); // get rid of 25 
+		sleep(1);
+		kill(pid, SIGTERM);
+		sleep(1);
+    	break;
 
 	}
 	waitpid(pid, NULL, 0);
