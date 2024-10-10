@@ -165,7 +165,54 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline) 
 {
-	return;
+    char *argv[MAXARGS];
+	int bg;
+	pid_t pid;
+	sigset_t mask;
+
+	 // Parse the command line and check if the job should run in the background
+    bg = parseline(cmdline, argv);
+    if (argv[0] == NULL) return; // Ignore empty lines
+
+    // Check if the command is a built-in command
+    if (!builtin_cmd(argv)) {
+        // Block SIGCHLD, SIGINT, and SIGTSTP signals
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGCHLD);
+        sigaddset(&mask, SIGINT);
+        sigaddset(&mask, SIGTSTP);
+        sigprocmask(SIG_BLOCK, &mask, NULL); // Block signals
+
+        // Fork a child process
+        if ((pid = fork()) == 0) { // Child process
+            // Unblock signals in the child process
+            sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+            // Put the child in a new process group
+            setpgid(0, 0);
+
+            // Execute the command
+            if (execve(argv[0], argv, environ) < 0) {
+                printf("%s: Command not found\n", argv[0]);
+                exit(1);
+            }
+        }
+
+        // Parent process
+        // Add the job to the job list
+        addjob(jobs, pid, (bg ? BG : FG), cmdline);
+
+        // Unblock the signals
+        sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+        // If foreground job, wait for it to finish
+        if (!bg) {
+            waitfg(pid);
+        } else {
+            // If background job, print job info
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+        }
+    }
 }
 
 /* 
@@ -231,7 +278,21 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
-	return 0;     /* not a builtin command */
+	if (argv[0] == NULL) {
+		return 0;
+	}
+
+	if (strcmp(argv[0], "quit") == 0) {
+		exit(0);
+	} else if ( strcmp(argv[0], "fg") == 0 || strcmp(argv[0], "bg" ) == 0){
+		do_bgfg(argv);
+		return 1;
+	} else if(strcmp(argv[0], "jobs") == 0) {
+		listjobs(jobs);
+		return 1;
+	}
+
+	return 0;
 }
 
 /* 
