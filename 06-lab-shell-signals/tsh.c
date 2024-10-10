@@ -308,7 +308,11 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-	return;
+	struct job_t *job = getjobpid(jobs, pid);  // Get the job with the given pid
+    while (job != NULL && job->state == FG) {  // Continue looping while the job is in the foreground
+        sleep(1);  // Sleep for 1 second
+        job = getjobpid(jobs, pid);  // Re-check the job state in case it changed
+    }
 }
 
 /*****************
@@ -324,7 +328,46 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
-	return;
+	int status;
+    pid_t pid;
+
+    if (verbose)
+        printf("sigchld_handler: entering\n");
+
+    // Reap child processes that have terminated or stopped
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
+        // If the child was stopped (e.g., by SIGTSTP)
+        if (WIFSTOPPED(status)) {
+            int sig = WSTOPSIG(status);
+            printf("Job [%d] (%d) stopped by signal %d\n", pid2jid(pid), pid, sig);
+            // Change the state of the job to stopped
+            struct job_t *job = getjobpid(jobs, pid);
+            if (job != NULL) {
+                job->state = ST;  // ST for "stopped"
+            }
+        }
+        // If the child was terminated by a signal (e.g., SIGINT)
+        else if (WIFSIGNALED(status)) {
+            int sig = WTERMSIG(status);
+            printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, sig);
+            // Remove the job from the job list
+            deletejob(jobs, pid);
+        }
+        // If the child terminated normally
+        else if (WIFEXITED(status)) {
+            // Remove the job from the job list
+            deletejob(jobs, pid);
+        }
+    }
+
+    if (pid < 0 && errno != ECHILD) {
+        perror("waitpid error");
+    }
+
+    if (verbose)
+        printf("sigchld_handler: exiting\n");
+
+    return;
 }
 
 /* 
