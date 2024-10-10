@@ -377,7 +377,16 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig) 
 {
-	return;
+	pid_t fg_pid = fgpid(jobs);  // Get the process ID of the foreground job
+
+    if (fg_pid != 0) {  // If there's a foreground job
+        kill(-fg_pid, SIGINT);  // Send SIGINT to the process group of the foreground job
+    }
+
+    if (verbose)
+        printf("sigint_handler: sent SIGINT to fg job %d\n", fg_pid);
+
+    return;
 }
 
 /*
@@ -387,7 +396,16 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig) 
 {
-	return;
+	pid_t fg_pid = fgpid(jobs);  // Get the process ID of the foreground job
+
+    if (fg_pid != 0) {  // If there's a foreground job
+        kill(-fg_pid, SIGTSTP);  // Send SIGTSTP to the process group of the foreground job
+    }
+
+    if (verbose)
+        printf("sigtstp_handler: sent SIGTSTP to fg job %d\n", fg_pid);
+
+    return;
 }
 
 /*********************
