@@ -284,7 +284,7 @@ int builtin_cmd(char **argv)
 
 	if (strcmp(argv[0], "quit") == 0) {
 		exit(0);
-	} else if ( strcmp(argv[0], "fg") == 0 || strcmp(argv[0], "bg" ) == 0){
+	} else if (strcmp(argv[0], "fg") == 0 || strcmp(argv[0], "bg" ) == 0){
 		do_bgfg(argv);
 		return 1;
 	} else if(strcmp(argv[0], "jobs") == 0) {
@@ -300,7 +300,54 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
-	return;
+   struct job_t *jobp = NULL;
+    pid_t pid;
+    int jid;
+
+    // Check to make sure there is a second argument 
+	if (argv[1] == NULL) {
+        printf("%s command requires PID or %%jobid argument\n", argv[0]);
+        return;
+    }
+	// Check if it's a job ID (%jobid)
+    else if (argv[1][0] == '%') {
+        jid = atoi(&argv[1][1]);  // Extract job ID number
+        jobp = getjobjid(jobs, jid);
+        if (jobp == NULL) {
+            printf("%%%d: No such job\n", jid);
+            return;
+        }
+        pid = jobp->pid;
+    }
+    // Otherwise, assume it's a PID
+    else if (isdigit(argv[1][0])) {
+        pid = atoi(argv[1]);
+        jobp = getjobpid(jobs, pid);
+        if (jobp == NULL) {
+            printf("(%d): No such process\n", pid);
+            return;
+        }
+    } 
+    else {
+        printf("%s: argument must be a PID or %%jobid\n", argv[0]);
+        return;
+    }
+
+    // Send SIGCONT to the job's process group to resume it
+    if (kill(-pid, SIGCONT) < 0) {
+        perror("kill (SIGCONT)");
+    }
+
+    // If fg, put in the foreground and wait
+    if (strcmp(argv[0], "fg") == 0) {
+        jobp->state = FG;    // Set the job state to FG
+        waitfg(jobp->pid);   // Wait for the job to complete in the foreground
+    }
+    // If bg, update state and print job information
+    else if (strcmp(argv[0], "bg") == 0) {
+        jobp->state = BG;    // Set the job state to BG
+        printf("[%d] (%d) %s", jobp->jid, jobp->pid, jobp->cmdline);
+    } 
 }
 
 /* 
