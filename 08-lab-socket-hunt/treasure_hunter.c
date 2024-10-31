@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "sockhelper.h"
 
@@ -31,6 +32,18 @@ int main(int argc, char *argv[]) {
     printf("Port: %d\n", port);
     printf("Level: %d\n", level);
     printf("Seed: %d\n", seed);
+
+    unsigned char message[8];
+    message[0] = 0;
+    message[1] = (unsigned char)level;
+
+    unsigned int userid_n = htonl(USERID);
+    memcpy(&message[2], &userid_n, sizeof(userid_n));
+
+    unsigned short seed_n = htons((unsigned short)seed);
+    memcpy(&message[6], &seed_n, sizeof(seed_n));
+
+    print_bytes(message, 8);
 
     return 0;
 }
