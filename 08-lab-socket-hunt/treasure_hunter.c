@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #include "sockhelper.h"
 
@@ -33,6 +37,7 @@ int main(int argc, char *argv[]) {
     printf("Level: %d\n", level);
     printf("Seed: %d\n", seed);
 
+	// Initial request
     unsigned char message[8];
     message[0] = 0;
     message[1] = (unsigned char)level;
@@ -44,6 +49,56 @@ int main(int argc, char *argv[]) {
     memcpy(&message[6], &seed_n, sizeof(seed_n));
 
     print_bytes(message, 8);
+
+	// Check point 2 
+	struct addrinfo hints, *res, *rp;
+    int sockfd;
+    char port_str_conv[6];
+
+	sprintf(port_str_conv, "%d", port);
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if (getaddrinfo(server, port_str_conv, &hints, &res) != 0) {
+        perror("getaddrinfo");
+        return 1;
+    }
+
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
+        sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sockfd == -1) continue;
+
+        struct sockaddr_storage remote_addr_ss;
+        struct sockaddr *remote_addr = (struct sockaddr *)&remote_addr_ss;
+        memcpy(remote_addr, rp->ai_addr, sizeof(struct sockaddr_storage));
+
+        if (sendto(sockfd, message, sizeof(message), 0, remote_addr, rp->ai_addrlen) == -1) {
+            perror("sendto");
+            close(sockfd);
+            continue;
+        }
+
+        unsigned char response[256];
+        socklen_t addr_len = sizeof(struct sockaddr_storage);
+        int response_len = recvfrom(sockfd, response, sizeof(response), 0, remote_addr, &addr_len);
+        if (response_len == -1) {
+            perror("recvfrom");
+            close(sockfd);
+            continue;
+        }
+
+        printf("Received %d bytes from server\n", response_len);
+        print_bytes(response, response_len);
+
+        close(sockfd);
+        break;
+    }
+
+	
+
+    freeaddrinfo(res);
 
     return 0;
 }
